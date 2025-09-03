@@ -64,3 +64,8 @@ async def root():
 @app.get("/ui")
 async def ui_redirect():
     return RedirectResponse(url="/ui/")
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
