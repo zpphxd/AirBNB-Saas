@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+airbnb_cleaning.db
+
+# IDE/OS
+.DS_Store
+.idea/
+.vscode/
+
+# Media/uploads
+media/
+
