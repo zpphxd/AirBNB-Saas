@@ -59,3 +59,8 @@ app.mount("/ui", StaticFiles(directory=ui_dir, html=True), name="ui")
 @app.get("/")
 async def root():
     return RedirectResponse(url="/ui/")
+
+
+@app.get("/ui")
+async def ui_redirect():
+    return RedirectResponse(url="/ui/")
