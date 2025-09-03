@@ -59,10 +59,61 @@ def create_job(payload: JobCreate, db: Session = Depends(get_db), user: models.U
 
 
 @router.get("/open", response_model=list[JobOut])
-def list_open_jobs(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+def list_open_jobs(
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
     q = db.query(models.CleaningJob).filter(models.CleaningJob.status == models.JobStatus.open)
-    jobs = q.order_by(models.CleaningJob.booking_start.asc()).all()
+    jobs = q.order_by(models.CleaningJob.booking_start.asc()).offset(offset).limit(limit).all()
     return jobs
+
+
+@router.get("/me", response_model=list[JobOut])
+def my_jobs(
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
+    if user.role == models.UserRole.cleaner:
+        cleaner = db.query(models.Cleaner).filter(models.Cleaner.user_id == user.id).first()
+        if not cleaner:
+            return []
+        return (
+            db.query(models.CleaningJob)
+            .filter(models.CleaningJob.cleaner_id == cleaner.id)
+            .order_by(models.CleaningJob.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+    if user.role == models.UserRole.host:
+        host = db.query(models.Host).filter(models.Host.user_id == user.id).first()
+        if not host:
+            return []
+        props = db.query(models.Property.id).filter(models.Property.host_id == host.id).subquery()
+        return (
+            db.query(models.CleaningJob)
+            .filter(models.CleaningJob.property_id.in_(props))
+            .order_by(models.CleaningJob.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+    # admin
+    return (
+        db.query(models.CleaningJob)
+        .order_by(models.CleaningJob.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
 
 @router.post("/{job_id}/claim", response_model=JobOut)
@@ -176,4 +227,3 @@ def get_job(job_id: int, db: Session = Depends(get_db), user: models.User = Depe
     if not job:
         raise HTTPException(status_code=404, detail="Not found")
     return job
-

@@ -4,3 +4,5 @@ SQLAlchemy==2.0.32
 pydantic==2.8.2
 email-validator==2.2.0
 python-multipart==0.0.9
+passlib[bcrypt]==1.7.4
+PyJWT==2.9.0

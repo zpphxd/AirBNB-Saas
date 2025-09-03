@@ -18,13 +18,16 @@ test.afterAll(async () => {
 });
 
 test('MVP API flow via Playwright request', async ({ request }) => {
+  const ts = Date.now();
+  const hostEmail = `phost+${ts}@example.com`;
+  const cleanerEmail = `pcleaner+${ts}@example.com`;
   // Register host
-  const hostReg = await request.post('/auth/register', { data: { email: 'phost@example.com', password: 'secret123', role: 'host', name: 'PH' } });
+  const hostReg = await request.post('/auth/register', { data: { email: hostEmail, password: 'secret123', role: 'host', name: 'PH' } });
   expect(hostReg.ok()).toBeTruthy();
   const hostToken = (await hostReg.json()).token as string;
 
   // Register cleaner
-  const cleanerReg = await request.post('/auth/register', { data: { email: 'pcleaner@example.com', password: 'secret123', role: 'cleaner', name: 'PC' } });
+  const cleanerReg = await request.post('/auth/register', { data: { email: cleanerEmail, password: 'secret123', role: 'cleaner', name: 'PC' } });
   expect(cleanerReg.ok()).toBeTruthy();
   const cleanerToken = (await cleanerReg.json()).token as string;
 
@@ -67,4 +70,3 @@ test('MVP API flow via Playwright request', async ({ request }) => {
   const rateRes = await request.post(`/jobs/${job.id}/rating`, { data: { stars: 5, feedback: 'Great!' }, headers: { Authorization: `Bearer ${hostToken}` } });
   expect(rateRes.ok()).toBeTruthy();
 });
-

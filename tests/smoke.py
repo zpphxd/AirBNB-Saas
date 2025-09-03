@@ -17,11 +17,14 @@ def auth_headers(token: str):
 def run():
     with TestClient(app) as client:
         # Register users
-        r = client.post("/auth/register", json={"email": "host@example.com", "password": "secret123", "role": "host", "name": "Host A"})
+        ts = __import__('time').time()
+        host_email = f"host+{int(ts)}@example.com"
+        cleaner_email = f"cleaner+{int(ts)}@example.com"
+        r = client.post("/auth/register", json={"email": host_email, "password": "secret123", "role": "host", "name": "Host A"})
         assert r.status_code == 200, r.text
         host_token = r.json()["token"]
 
-        r = client.post("/auth/register", json={"email": "cleaner@example.com", "password": "secret123", "role": "cleaner", "name": "Cleaner A"})
+        r = client.post("/auth/register", json={"email": cleaner_email, "password": "secret123", "role": "cleaner", "name": "Cleaner A"})
         assert r.status_code == 200, r.text
         cleaner_token = r.json()["token"]
 

@@ -47,14 +47,28 @@ def upcoming_bookings(property_id: int, user: models.User = Depends(get_current_
 
 
 @router.get("/mine", response_model=list[PropertyOut])
-def my_properties(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+def my_properties(
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
     if user.role != models.UserRole.host and user.role != models.UserRole.admin:
         raise HTTPException(status_code=403, detail="Only hosts/admin can list properties")
     if user.role == models.UserRole.admin:
-        props = db.query(models.Property).all()
+        props = db.query(models.Property).offset(offset).limit(limit).all()
         return props
     host = db.query(models.Host).filter(models.Host.user_id == user.id).first()
     if not host:
         return []
-    props = db.query(models.Property).filter(models.Property.host_id == host.id).all()
+    props = (
+        db.query(models.Property)
+        .filter(models.Property.host_id == host.id)
+        .order_by(models.Property.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
     return props
