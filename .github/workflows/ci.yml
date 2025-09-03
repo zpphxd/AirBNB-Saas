@@ -28,6 +28,11 @@ jobs:
         run: |
           npm ci || npm i
           npx playwright install --with-deps
+      - name: Build React frontend
+        working-directory: frontend
+        run: |
+          npm ci || npm i
+          npm run build
       - name: Run Playwright e2e
         env:
           BASE_URL: http://localhost:8005

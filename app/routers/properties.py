@@ -45,3 +45,16 @@ def upcoming_bookings(property_id: int, user: models.User = Depends(get_current_
     data = get_upcoming_bookings(property_id)
     return data
 
+
+@router.get("/mine", response_model=list[PropertyOut])
+def my_properties(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    if user.role != models.UserRole.host and user.role != models.UserRole.admin:
+        raise HTTPException(status_code=403, detail="Only hosts/admin can list properties")
+    if user.role == models.UserRole.admin:
+        props = db.query(models.Property).all()
+        return props
+    host = db.query(models.Host).filter(models.Host.user_id == user.id).first()
+    if not host:
+        return []
+    props = db.query(models.Property).filter(models.Property.host_id == host.id).all()
+    return props

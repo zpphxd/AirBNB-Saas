@@ -51,13 +51,20 @@ media_path = ensure_media_dir()
 app.mount("/media", StaticFiles(directory=media_path), name="media")
 
 # Serve minimal UI for demo at /ui and redirect root to it
-ui_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ui")
+root_dir = os.path.dirname(os.path.dirname(__file__))
+ui_dir = os.path.join(root_dir, "ui")
+frontend_dist = os.path.join(root_dir, "frontend", "dist")
 os.makedirs(ui_dir, exist_ok=True)
 app.mount("/ui", StaticFiles(directory=ui_dir, html=True), name="ui")
+if os.path.isdir(frontend_dist):
+    app.mount("/app", StaticFiles(directory=frontend_dist, html=True), name="app")
 
 
 @app.get("/")
 async def root():
+    # Prefer React app if built
+    if os.path.isdir(frontend_dist):
+        return RedirectResponse(url="/app/")
     return RedirectResponse(url="/ui/")
 
 
