@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -49,3 +50,12 @@ app.include_router(jobs_router.router, prefix="/jobs", tags=["jobs"])
 media_path = ensure_media_dir()
 app.mount("/media", StaticFiles(directory=media_path), name="media")
 
+# Serve minimal UI for demo at /ui and redirect root to it
+ui_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ui")
+os.makedirs(ui_dir, exist_ok=True)
+app.mount("/ui", StaticFiles(directory=ui_dir, html=True), name="ui")
+
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/ui/")

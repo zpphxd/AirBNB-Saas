@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Airbnb Cleaning & Maintenance MVP</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      .card { border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+      input, select, button, textarea { margin: .25rem 0; padding: .5rem; }
+      .row { display: flex; gap: 1rem; }
+      .col { flex: 1; }
+      code { background: #f6f8fa; padding: .1rem .3rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Airbnb Cleaning & Maintenance MVP</h1>
+    <div class="card">
+      <h3>Auth</h3>
+      <div class="row">
+        <div class="col">
+          <strong>Register</strong><br/>
+          <input id="regEmail" placeholder="email" />
+          <input id="regPass" placeholder="password" type="password" />
+          <select id="regRole">
+            <option value="host">host</option>
+            <option value="cleaner">cleaner</option>
+          </select>
+          <button onclick="register()">Register</button>
+        </div>
+        <div class="col">
+          <strong>Login</strong><br/>
+          <input id="loginEmail" placeholder="email" />
+          <input id="loginPass" placeholder="password" type="password" />
+          <button onclick="login()">Login</button>
+        </div>
+      </div>
+      <div>Token: <code id="token">(none)</code></div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <h3>Host Panel</h3>
+          <div>
+            <strong>Create Property</strong><br/>
+            <input id="propName" placeholder="Name" />
+            <input id="propAddr" placeholder="Address" />
+            <button onclick="createProperty()">Create</button>
+            <div id="propOut"></div>
+          </div>
+          <hr/>
+          <div>
+            <strong>Create Job</strong><br/>
+            <input id="jobPropId" placeholder="Property ID" />
+            <input id="jobStart" placeholder="Booking start ISO" />
+            <input id="jobEnd" placeholder="Booking end ISO" />
+            <textarea id="jobChecklist" placeholder='Checklist items (one per line)'></textarea>
+            <button onclick="createJob()">Create Job</button>
+            <div id="jobOut"></div>
+          </div>
+          <hr/>
+          <div>
+            <strong>Rate Job</strong><br/>
+            <input id="rateJobId" placeholder="Job ID" />
+            <input id="rateStars" type="number" min="1" max="5" placeholder="Stars" />
+            <input id="rateFeedback" placeholder="Feedback" />
+            <button onclick="rateJob()">Rate</button>
+            <div id="rateOut"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <h3>Cleaner Panel</h3>
+          <div>
+            <button onclick="loadOpenJobs()">Load Open Jobs</button>
+            <pre id="openJobs"></pre>
+          </div>
+          <div>
+            <input id="claimJobId" placeholder="Job ID" />
+            <button onclick="claimJob()">Claim Job</button>
+          </div>
+          <hr/>
+          <div>
+            <strong>Tick Checklist</strong><br/>
+            <input id="tickJobId" placeholder="Job ID" />
+            <input id="tickItemIds" placeholder="Item IDs comma-separated" />
+            <button onclick="tickChecklist()">Tick</button>
+            <div id="tickOut"></div>
+          </div>
+          <div>
+            <strong>Upload Photo</strong><br/>
+            <input id="photoJobId" placeholder="Job ID" />
+            <input id="photoItemId" placeholder="Item ID" />
+            <input id="photoFile" type="file" />
+            <button onclick="uploadPhoto()">Upload</button>
+            <div id="photoOut"></div>
+          </div>
+          <div>
+            <strong>Mark Complete</strong><br/>
+            <input id="completeJobId" placeholder="Job ID" />
+            <button onclick="markComplete()">Complete</button>
+            <div id="completeOut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const api = (path, opts={}) => fetch(path, opts);
+      const headers = () => ({ 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` });
+
+      async function register() {
+        const email = $('regEmail').value; const password = $('regPass').value; const role = $('regRole').value;
+        const r = await api('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, role })});
+        const j = await r.json(); if (j.token) { localStorage.setItem('token', j.token); $('token').textContent = j.token; }
+      }
+      async function login() {
+        const email = $('loginEmail').value; const password = $('loginPass').value;
+        const r = await api(`/auth/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, { method: 'POST' });
+        const j = await r.json(); if (j.token) { localStorage.setItem('token', j.token); $('token').textContent = j.token; }
+      }
+      async function createProperty() {
+        const name = $('propName').value, address = $('propAddr').value;
+        const r = await api('/properties/', { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify({ name, address })});
+        $('propOut').textContent = (await r.text());
+      }
+      async function createJob() {
+        const property_id = Number($('jobPropId').value);
+        const booking_start = $('jobStart').value; const booking_end = $('jobEnd').value;
+        const checklist = $('jobChecklist').value.split('\n').filter(Boolean).map(text => ({ text }));
+        const r = await api('/jobs/', { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify({ property_id, booking_start, booking_end, checklist })});
+        $('jobOut').textContent = (await r.text());
+      }
+      async function rateJob() {
+        const jobId = Number($('rateJobId').value); const stars = Number($('rateStars').value); const feedback = $('rateFeedback').value;
+        const r = await api(`/jobs/${jobId}/rating`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify({ stars, feedback })});
+        $('rateOut').textContent = (await r.text());
+      }
+      async function loadOpenJobs() {
+        const r = await api('/jobs/open', { headers: headers() });
+        $('openJobs').textContent = JSON.stringify(await r.json(), null, 2);
+      }
+      async function claimJob() {
+        const jobId = Number($('claimJobId').value);
+        const r = await api(`/jobs/${jobId}/claim`, { method: 'POST', headers: headers() });
+        alert(await r.text());
+      }
+      async function tickChecklist() {
+        const jobId = Number($('tickJobId').value);
+        const ids = $('tickItemIds').value.split(',').map(x => Number(x.trim())).filter(Boolean);
+        const r = await api(`/jobs/${jobId}/checklist/tick`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify({ item_ids: ids })});
+        $('tickOut').textContent = (await r.text());
+      }
+      async function uploadPhoto() {
+        const jobId = Number($('photoJobId').value);
+        const itemId = Number($('photoItemId').value);
+        const fd = new FormData();
+        fd.append('file', $('photoFile').files[0]);
+        const r = await api(`/jobs/${jobId}/checklist/${itemId}/photo`, { method: 'POST', headers: headers(), body: fd });
+        $('photoOut').textContent = (await r.text());
+      }
+      async function markComplete() {
+        const jobId = Number($('completeJobId').value);
+        const r = await api(`/jobs/${jobId}/complete`, { method: 'POST', headers: headers() });
+        $('completeOut').textContent = (await r.text());
+      }
+    </script>
+  </body>
+  </html>
+

@@ -15,3 +15,7 @@ airbnb_cleaning.db
 # Media/uploads
 media/
 
+# Node / Playwright
+node_modules/
+playwright-report/
+test-results/

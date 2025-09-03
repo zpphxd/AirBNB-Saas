@@ -1,0 +1,13 @@
+{
+  "name": "airbnb-cleaning-saas",
+  "private": true,
+  "scripts": {
+    "dev": "uvicorn app.main:app --reload",
+    "start": "uvicorn app.main:app --host 0.0.0.0 --port 8000",
+    "test:smoke": "python tests/smoke.py",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.2"
+  }
+}
